@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Code Input</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #ffecd2);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            z-index: -1;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .panel {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        input {
+            display: block;
+            width: 100%;
+            padding: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #result {
+            margin-top: 1rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+        #codePanel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background-color: #4CAF50;
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            font-size: 2rem;
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+        }
+        #codePanel.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+        .shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <div class="panel">
+            <h1>Secret Code Input</h1>
+            <input type="text" id="input1" placeholder="Enter input 1">
+            <input type="text" id="input2" placeholder="Enter input 2">
+            <input type="text" id="input3" placeholder="Enter input 3">
+            <button onclick="checkInputs()">Submit</button>
+            <div id="result"></div>
+        </div>
+    </div>
+    <div id="codePanel"></div>
+
+    <script>
+        let correctInputs, secretCode;
+
+        // Read values from file
+        fetch('secret_values.json')
+            .then(response => response.json())
+            .then(data => {
+                correctInputs = data.inputs.map(input => CryptoJS.SHA256(input).toString());
+                secretCode = data.code;
+            })
+            .catch(error => {
+                console.error('Error loading secret values:', error);
+                // Fallback values in case file reading fails
+                correctInputs = [
+                    CryptoJS.SHA256('apple').toString(),
+                    CryptoJS.SHA256('banana').toString(),
+                    CryptoJS.SHA256('cherry').toString()
+                ];
+                secretCode = '742';
+            });
+
+        function checkInputs() {
+            const inputs = [
+                document.getElementById('input1').value,
+                document.getElementById('input2').value,
+                document.getElementById('input3').value
+            ];
+
+            if (inputs.some(input => input.trim() === '')) {
+                document.getElementById('result').textContent = 'Please fill in all inputs.';
+                return;
+            }
+
+            const allCorrect = inputs.every((input, index) => 
+                CryptoJS.SHA256(input).toString() === correctInputs[index]
+            );
+
+            if (allCorrect) {
+                document.getElementById('codePanel').textContent = `Secret Code: ${secretCode}`;
+                document.getElementById('codePanel').classList.add('show');
+            } else {
+                document.getElementById('result').textContent = 'Incorrect inputs. Please try again.';
+                document.querySelector('.panel').classList.add('shake');
+                setTimeout(() => {
+                    document.querySelector('.panel').classList.remove('shake');
+                }, 820);
+                inputs.forEach((_, index) => {
+                    document.getElementById(`input${index + 1}`).value = '';
+                });
+            }
+        }
+    </script>
+</body>
+</html>
